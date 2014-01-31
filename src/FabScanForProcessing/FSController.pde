@@ -5,6 +5,7 @@ public class FSController
   FSTurntable turntable;
   FSVision vision;
   FSModel model;
+  FSSerial serial;
 
   public boolean scanning = false;
   boolean meshComputed = false;
@@ -26,10 +27,11 @@ public class FSController
   {
     parent = p;
     webcam = new FSWebcam(parent);
-    laser = new FSLaser();
+    laser = new FSLaser(this);
     turntable = new FSTurntable();
     vision = new FSVision();
     model = new FSModel();
+    serial = new FSSerial(parent);
   }
 
   public boolean detectLaserLine()

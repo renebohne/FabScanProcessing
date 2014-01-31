@@ -1,5 +1,7 @@
 public static class FSConfiguration
 {
+
+public static String SERIAL_PORT_NAME = "/dev/tty.usbmodem1421";
   
 //to make the scanning process faster we ommit the lower and hight part of the cvImage
 //as there is no object anyway.  The lower limit is defined by the turning table lower bound
