@@ -16,8 +16,12 @@ public static int ANALYZING_LASER_OFFSET = 90;
 /********************************/
 //logitech c270
 public static float FRAME_WIDTH = 26.6f;//in cm. the width of what the camera sees, ie place a measure tool at the back-plane and see how many cm the camera sees.
+//public static float CAM_IMAGE_WIDTH = 1280.0f;
+//public static float CAM_IMAGE_HEIGHT = 960.0f; //here I am not sure, I think it is 960, (old=853.0f)
 public static float CAM_IMAGE_WIDTH = 1280.0f;
 public static float CAM_IMAGE_HEIGHT = 960.0f; //here I am not sure, I think it is 960, (old=853.0f)
+
+
 
 //defining the origin in the cvFrame
 //the position of intersection of back plane with ground plane in cvFrame in percent

@@ -11,4 +11,9 @@ public class FSModel
   {
     pointcloud.add(fsNewPoint);
   }
+  
+  public ArrayList<PVector> getPointCloud()
+  {
+    return pointcloud;
+  }
 }

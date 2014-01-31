@@ -1,16 +1,57 @@
+// uses hough_lines by David Chatting: https://github.com/davidchatting/hough_lines
+import java.awt.image.BufferedImage; 
+import java.util.Vector; 
+import java.awt.Color;
 
 
 public class FSVision
 {
-
-
-
   public FSVision()
   {
   }
 
+public PVector detectLaserLine(PImage laserOff, PImage laserOn, int threshold )
+{
+    int rows = laserOff.height;
+    PImage laserLine = subLaser(laserOff, laserOn);//was subLaser2
+    
+    PImage laserLineBW = convertImageToGreyscale(laserLine);//convert to grayscale
+    
+    HoughTransform h=new HoughTransform(laserLineBW);
+    Vector<HoughLine> lines=h.getLines(4);  //get the top scoring 4 lines
 
-  public PImage detectEdges(PImage img)
+    
+    if(lines.size()==0){
+        //println("ERROR: Did not detect any laser line, did you select a SerialPort form the menu?");
+        PVector p = new PVector(0,0,0);
+        return(p);
+    }
+    
+    PVector p1 = new PVector(lines.elementAt(0).x1, lines.elementAt(0).y1);
+   
+    PVector p = convertCvPointToFSPoint(p1);
+    return p;
+
+}
+
+
+public PImage detectEdges(PImage img)
+{
+  CannyEdgeDetector detector = new CannyEdgeDetector();
+
+  detector.setLowThreshold(0.5f);
+  detector.setHighThreshold(1f);
+
+   detector.setSourceImage((java.awt.image.BufferedImage)img.getImage());
+   
+   detector.process();
+   BufferedImage edges = detector.getEdgesImage();
+   PImage changed = new PImage(edges);
+   return changed;
+}
+
+  //from Processing Webpage... but this is not working too well
+  public PImage old_detectEdges(PImage img)
   {
     float[][] kernel = {
       { 
@@ -54,53 +95,70 @@ public class FSVision
 
   private PImage subLaser(PImage laserOffImage, PImage laserOnImage)
   {
-    int cols = laserOffImage.width;
-    int rows = laserOffImage.height;
-
+    if(laserOffImage == null || laserOnImage == null)
+    {
+      return null;
+    }
     PImage bwLaserOffImage = convertImageToGreyscale(laserOffImage);
     PImage bwLaserOnImage = convertImageToGreyscale(laserOnImage);
 
-    PImage result;
-    try
-    {
-      result = (PImage) bwLaserOnImage.clone();
-    }
-    catch(CloneNotSupportedException ex)
-    {
-      result = null;
-    }
-
+    PImage result = (PImage) bwLaserOnImage.get();
+    
     result.blend(bwLaserOffImage, 0, 0, bwLaserOffImage.width, bwLaserOffImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
-    result.blend(0, 0, bwLaserOffImage.width, bwLaserOffImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
+    
+    //PImage tresh2Image = (PImage) result.get();
+    
+    PImage gaussImage = result.get();
+    gaussImage.filter(BLUR, 5); //gaussian filter - parameter: radius... 5 or 3??
 
-    PImage tresh2Image;
-    try
-    {
-      tresh2Image = (PImage) result.clone();
-    }
-    catch(CloneNotSupportedException ex)
-    {
-      tresh2Image = null;
-    }
-
-
-    result.filter(BLUR, 5); //gaussian filter - parameter: radius... 5 or 3??
-
+    result.blend(gaussImage, 0, 0, gaussImage.width, gaussImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
+    
     //cv::threshold(diffImage,treshImage,threshold,255,cv::THRESH_BINARY); //apply threshold
-    result.filter(THRESHOLD, 10);//apply threshold
+    result.filter(THRESHOLD, 0.1);//apply threshold
 
     result.filter(ERODE);
 
-
     result = detectEdges(result);
-
-
-
-    //cv::Mat element5(3,3,CV_8U,cv::Scalar(1));
-    //cv::morphologyEx(treshImage,treshImage,cv::MORPH_OPEN,element5);
-
-    //cv::cvtColor(treshImage, result, CV_GRAY2RGB); //convert back ro rgb
-    return result;
+    
+    PImage laserImage = createImage(result.width, result.height, RGB);
+    result.loadPixels();
+    laserImage.loadPixels();
+    
+    //initialize all pixels in laserImage to black
+    for(int px=0; px<laserImage.width*laserImage.height; px++)
+    {
+      laserImage.pixels[px] = color(0);
+    }
+    
+    int[] edges = new int[result.width]; //contains the cols index of the detected edges per row
+    for(int y = 0; y <result.height; y++){
+        //reset the detected edges
+        for(int j=0; j<result.width; j++){ edges[j]=-1; }
+        
+        int j=0;
+        for(int x = 0; x<result.width; x++){
+            if(result.pixels[y*result.width+x]>color(250)){
+                edges[j]=x;
+                j++;
+            }
+        }
+        
+        //iterate over detected edges, take middle of two edges
+        for(int k=0; k<result.width-1; k+=2)
+        {
+            if(edges[k]>=0 && edges[k+1]>=0 && (edges[k+1]-edges[k]<40) )
+            {
+                int middle = (int)(edges[k]+edges[k+1])/2;
+                //qDebug() << cols << rows << y << middle;
+                laserImage.pixels[y*result.width+middle] = color(255);
+            }
+        }
+    }
+    
+    result.updatePixels();
+    laserImage.updatePixels();
+    
+    return laserImage;
   }
 
 
@@ -108,34 +166,14 @@ public class FSVision
 
   PImage convertImageToGreyscale(PImage img)
   {
-    /*
-    PImage result = new PImage(img.width, img.height);
-     for (int x=0; x<img.width; x++)
-     {
-     for (int y=0; y<img.height; y++)
-     {
-     color c = img.get(x, y);
-     float red = red(c);
-     float green = green(c);
-     float blue = blue(c);
-     int grey = (int)(red+green+blue)/3;
-     color Color =color(grey, grey, grey);
-     result.set(x, y, Color);
-     }
-     }
-     return result;
-     */
     PImage result;
 
-    try
-    {
-      result = (PImage) img.clone();
-    }
-    catch(CloneNotSupportedException ex)
+    if(img == null)
     {
       return null;
     }
-
+    
+    result = img.get();
     result.filter(GRAY);
     return result;
   }
@@ -170,7 +208,7 @@ public class FSVision
     cvPoint.y -= origin.y;
 
     //scale
-    PVector fsPoint = new PVector(cvPoint.x*fsImageSize.x/cvImageSize.x, -cvPoint.y*fsImageSize.y/cvImageSize.y);
+    PVector fsPoint = new PVector(cvPoint.x*fsImageSize.x/cvImageSize.x, -cvPoint.y*fsImageSize.y/cvImageSize.y,0);
 
 
     return fsPoint;
@@ -180,29 +218,42 @@ public class FSVision
 
 
   //dpiVertical: step between vertical points, lowerLimit: remove points below this limit
-  public void putPointsFromFrameToCloud(PImage laserOffImage, PImage laserOnImage, int dpiVertical, float lowerLimit, FSController controller)
+  public boolean putPointsFromFrameToCloud(PImage laserOffImage, PImage laserOnImage, int dpiVertical, float lowerLimit, FSController controller)
   {
+    
+    if(laserOffImage == null || laserOnImage == null)
+    {
+      return false;
+    }
+    
     PImage laserLineImage = subLaser(laserOffImage, laserOnImage);
+    if(laserLineImage==null)
+    {
+      println("ERROR: laserLineImage==null");
+      return false;
+    }
 
     //convert from rgb to b&w
     PImage bwImage = convertImageToGreyscale(laserLineImage);
 
     //position of the laser line on the back plane in frame/image coordinates
     PVector fsLaserLinePosition =  controller.laser.getLaserPointPosition();
+    //println("fsLaserLinePosition: "+fsLaserLinePosition.toString());
     PVector cvLaserLinePosition = convertFSPointToCvPoint(fsLaserLinePosition);
+    //println("cvLaserLinePosition: "+cvLaserLinePosition.toString());
     float laserPos = cvLaserLinePosition.x;//const over all y
+    
 
-    int cols = laserLineImage.width;
-    int rows = laserLineImage.height;
+    bwImage.loadPixels();
 
     for (int y = FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT;y < bwImage.height-(FSConfiguration.LOWER_ANALYZING_FRAME_LIMIT);y+=dpiVertical )
     {
       for (int x = bwImage.width-1;x >= laserPos+FSConfiguration.ANALYZING_LASER_OFFSET;x--)
       {
-        if (bwImage.get(x, y)==255)//check if white=laser-reflection
+        if(bwImage.pixels[y*bwImage.width+x]==color(255))//check if white=laser-reflection
         { 
           //we have a white point in the grayscale image, so one edge laser line found
-          //no we should continue to look for the other edge and then take the middle of those two points
+          //now we should continue to look for the other edge and then take the middle of those two points
           //to take the width of the laser line into account
 
           //position of the reflected laser line on the image coord
@@ -210,26 +261,22 @@ public class FSVision
 
           //convert to world coordinates withouth depth
           PVector fsNewPoint = convertCvPointToFSPoint(cvNewPoint);
+          //println("fsNewPoint: "+fsNewPoint.toString());
 
           FSLine l1 = new FSLine(controller.webcam.getPosition(), fsNewPoint);
           FSLine l2 = new FSLine(controller.laser.getPosition(), controller.laser.getLaserPointPosition());
-
+          
+          
           PVector i = l1.computeIntersectionWithLine(l2);
           fsNewPoint.x = i.x;
           fsNewPoint.z = i.z;
-
+          
           //At this point we know the depth=z. Now we need to consider the scaling depending on the depth.
           //First we move our point to a camera centered cartesion system.
           fsNewPoint.y -= (controller.webcam.getPosition()).y;
           fsNewPoint.y *= ((controller.webcam.getPosition()).z - fsNewPoint.z)/(controller.webcam.getPosition()).z;
           //Redo the translation to the box centered cartesion system.
           fsNewPoint.y += (controller.webcam.getPosition()).y;
-
-          //get color from picture without laser -- TODO SINCE JAVA PORT DOES NOT CARE ABOUT COLORS YET
-          //FSUChar r = laserOff.at<cv::Vec3b>(y, x)[2];
-          //FSUChar g = laserOff.at<cv::Vec3b>(y, x)[1];
-          //FSUChar b = laserOff.at<cv::Vec3b>(y, x)[0];
-          //fsNewPoint.color = FSMakeColor(r, g, b);
 
           //turning new point according to current angle of turntable
           //translate coordinate system to the middle of the turntable
@@ -238,6 +285,7 @@ public class FSVision
           float alphaOld = (float)atan(fsNewPoint.z/fsNewPoint.x);
           float alphaNew = alphaOld+alphaDelta.y*(PI/180.0f);
           float hypotenuse = (float)sqrt(fsNewPoint.x*fsNewPoint.x + fsNewPoint.z*fsNewPoint.z);
+          
 
           if (fsNewPoint.z < 0 && fsNewPoint.x < 0) {
             alphaNew += PI;
@@ -247,15 +295,18 @@ public class FSVision
           }
           fsNewPoint.z = (float)sin(alphaNew)*hypotenuse;
           fsNewPoint.x = (float)cos(alphaNew)*hypotenuse;
-
+          
+          
           if (fsNewPoint.y>lowerLimit+0.5 && hypotenuse < 7) { //eliminate points from the grounds, that are not part of the model
-            //qDebug("adding point");
+            
             controller.model.addPointToPointCloud(fsNewPoint);
+            //println("added point to pointcloud: "+fsNewPoint.toString());
           }
           break;
         }
       }
     }
+    return true;
   }
 }
 

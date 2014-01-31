@@ -2,27 +2,21 @@
   
 public class FSTurntable
 {
-  private float turntableStepSize = 20;
+  
   
   public int DIRECTION_CCW = 0;
   public int DIRECTION_CW = 1;  
   
   private PVector _rotation;
   private float degreesPerStep = 360.0f/200.0f/16.0f; //the size of a microstep
+  private float turntableStepSize = 16*degreesPerStep;//GOOD RESOLUTION
   int direction = DIRECTION_CW;
   
   public FSTurntable()
   {
-    
-    
-
     _rotation = new PVector();
   }
   
-  public void setRotation(PVector rotation)
-  {
-    _rotation = rotation;
-  }
   
   public PVector getRotation()
   {
@@ -48,6 +42,11 @@ public class FSTurntable
   
   public void setDirection(int direction)
   {
+    //this->selectStepper();
+    //direction = d;
+    //char c = (d==FS_DIRECTION_CW)?MC_SET_DIRECTION_CW:MC_SET_DIRECTION_CCW;
+    //FSController::getInstance()->serial->writeChar(c);
+    
     if(direction==DIRECTION_CCW)//CCW
     {
     }
@@ -78,11 +77,13 @@ public class FSTurntable
   public void turnNumberOfDegrees(float degrees)
   {
     int steps = (int)(degrees/degreesPerStep);
+    
     if(direction==DIRECTION_CW){
       _rotation.y -= degrees;
     }else if(direction==DIRECTION_CCW){
       _rotation.y += degrees;
     }
+    
     turnNumberOfSteps(steps);
   }
   
