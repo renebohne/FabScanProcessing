@@ -111,7 +111,8 @@ public PImage detectEdges(PImage img)
     PImage gaussImage = result.get();
     gaussImage.filter(BLUR, 5); //gaussian filter - parameter: radius... 5 or 3??
 
-    result.blend(gaussImage, 0, 0, gaussImage.width, gaussImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
+    //seems to work better if we DON'T subtract a second time...???
+    //result.blend(gaussImage, 0, 0, gaussImage.width, gaussImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
     
     //cv::threshold(diffImage,treshImage,threshold,255,cv::THRESH_BINARY); //apply threshold
     result.filter(THRESHOLD, 0.1);//apply threshold

@@ -67,6 +67,8 @@ public class FSTurntable
     controller.serial.writeInt(10);//MC_TURNTABLE_STEPPER
 
     int size = steps/256*2;
+    
+    println("turnNumberOfSteps: "+steps);
 
     for (int i=0; i<=steps/256; i++)
     {

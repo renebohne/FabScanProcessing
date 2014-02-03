@@ -3,7 +3,7 @@ import processing.video.*;
 public class FSWebcam
 {
 
-  public boolean DEBUG_MODE = true;
+  public boolean DEBUG_MODE = false;
   private int image_counter=0;
 
   Capture cam;
@@ -17,6 +17,7 @@ public class FSWebcam
   {
     parent = p;
     //String[] cameras = Capture.list();
+    //println(cameras);
     //if (cameras != null)
     //{
     //for (int i = 0; i < cameras.length; i++) 
@@ -34,7 +35,7 @@ public class FSWebcam
     }
     else
     {
-      cam = new Capture(parent, 1280, 720, "FaceTime HD Camera (Built-in)", 30);
+      cam = new Capture(parent, (int) FSConfiguration.CAM_IMAGE_WIDTH, (int) FSConfiguration.CAM_IMAGE_HEIGHT, FSConfiguration.CAM_PORT_NAME , 30);
 
       if (cam != null)
       {

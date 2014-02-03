@@ -119,6 +119,7 @@ public class FSController
       {
         turntable.turnNumberOfDegrees(stepDegrees);
         delay(  300+(int)stepDegrees*100);//NOT PERFECT !!!
+     
 
         current_degree += stepDegrees;
       
@@ -126,6 +127,12 @@ public class FSController
       }
       
       return null;//vision.putPointsFromFrameToCloud failed
+    }
+    else if(current_degree >= 360.0)
+    {
+      scanning = false;
+      model.savePointCloudToFile();
+      return null;
     }
     else
     {
