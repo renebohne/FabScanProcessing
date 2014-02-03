@@ -13,10 +13,10 @@ public class FSController
   //all in degrees; (only when stepper is attached to laser)
   double laserSwipeMin = 30.0; //18
   double laserSwipeMax = 45.0; //50
-  
-  float stepDegrees =0.0f;
 
-    int yDpi = 1;//1 for Best and Good resolution, 5 for Normal resolution, 10 for poor 
+    float stepDegrees =0.0f;
+
+  int yDpi = 1;//1 for Best and Good resolution, 5 for Normal resolution, 10 for poor 
 
   PApplet parent;
 
@@ -40,56 +40,58 @@ public class FSController
     laser.turnOff();
     delay(200);
     PImage laserOffFrame = webcam.getFrame();
-    while(laserOffFrame == null)
+    while (laserOffFrame == null)
     {
       laserOffFrame = webcam.getFrame();
     }
     laser.turnOn();
     delay(200);
     PImage laserOnFrame = webcam.getFrame();
-    while(laserOnFrame == null)
+    while (laserOnFrame == null)
     {
       laserOnFrame = webcam.getFrame();
     }
     //cv::resize( laserOnFrame,laserOnFrame,cv::Size(1280,960) );
     //cv::resize( laserOffFrame,laserOffFrame,cv::Size(1280,960) );
 
-    
+
     PVector p = vision.detectLaserLine( laserOffFrame, laserOnFrame, threshold );
-    if(p.x == 0.0){return false;}
+    if (p.x == 0.0) {
+      return false;
+    }
     laser.setLaserPointPosition(p);
     return true;
   }
 
-  public void init()
+  public boolean init()
   {
     //check if the webcam is available
     if (!webcam.isAvailable())
     {
       println("ERROR: webcam is not available!");
-      return;
+      return false;
     }
 
     if (!detectLaserLine())
     {
       println("ERROR: laser line was not detected!");
+      return false;
     }
     else
     {
+      laser.disableStepperMotor();//disable the stepper motor that moves the laser
+
+      scanning = true;//start scanning; if false, scan stops
+      stepDegrees = turntable.getStepSize();
+
+      laser.turnOn();
+
+      turntable.setDirection(turntable.DIRECTION_CCW);
+      turntable.enableStepperMotor();
       println("laser DETECTED.");
     }
-
-    laser.disableStepperMotor();//disable the stepper motor that moves the laser
-
-    scanning = true;//start scanning; if false, scan stops
-    stepDegrees = turntable.getStepSize();
-
-    laser.turnOn();
-
-    turntable.setDirection(turntable.DIRECTION_CCW);
-    turntable.enableStepperMotor();
+    return true;
   }
-  
 
 
   public PImage tick()
@@ -100,7 +102,7 @@ public class FSController
       laser.turnOff();
       delay(200);//NOT PERFECT...
       PImage laserOffImage = webcam.getFrame();
-      while(laserOffImage == null)
+      while (laserOffImage == null)
       {
         laserOffImage = webcam.getFrame();
       }
@@ -109,27 +111,27 @@ public class FSController
       laser.turnOn();
       delay(200);//NOT PERFECT...
       PImage laserOnImage = webcam.getFrame();
-      while(laserOnImage == null)
+      while (laserOnImage == null)
       {
         laserOnImage = webcam.getFrame();
       }
 
       //here the magic happens
-       
-      if(vision.putPointsFromFrameToCloud(laserOffImage, laserOnImage, yDpi, 0, this) ==true)
+
+      if (vision.putPointsFromFrameToCloud(laserOffImage, laserOnImage, yDpi, 0, this) ==true)
       {
         turntable.turnNumberOfDegrees(stepDegrees);
         delay(  300+(int)stepDegrees*100);//NOT PERFECT !!!
-     
+
 
         current_degree += stepDegrees;
-      
+
         return vision.getImageForMainWindow();//this is the image that we see in the preview (MainWindow)
       }
-      
+
       return null;//vision.putPointsFromFrameToCloud failed
     }
-    else if(current_degree >= 360.0)
+    else if (current_degree >= 360.0)
     {
       scanning = false;
       model.savePointCloudToFile();
@@ -141,5 +143,5 @@ public class FSController
       return null;
     }
   }
-
 }
+

@@ -6,84 +6,85 @@ import java.awt.Color;
 
 public class FSVision
 {
-  
+
   private PImage returnImage = null;//you can put the image that this method should return in this variable. This image will be displayed after each step...
-  
+
   public FSVision()
   {
   }
-  
+
   //this image should be displayed in the MainWindow... for a preview and progress indicatin
   public PImage getImageForMainWindow()
   {
     return returnImage;
   }
-  
-   //this image should be displayed in the MainWindow... for a preview and progress indicatin
+
+  //this image should be displayed in the MainWindow... for a preview and progress indicatin
   public void setImageForMainWindow(PImage img)
   {
+
+
     returnImage = img.get();
   }
 
-public PVector detectLaserLine(PImage laserOff, PImage laserOn, int threshold )
-{
+  public PVector detectLaserLine(PImage laserOff, PImage laserOn, int threshold )
+  {
     int rows = laserOff.height;
     PImage laserLine = subLaser(laserOff, laserOn);//was subLaser2
-    
+
     PImage laserLineBW = convertImageToGreyscale(laserLine);//convert to grayscale
-    
+
     HoughTransform h=new HoughTransform(laserLineBW);
     Vector<HoughLine> lines=h.getLines(4);  //get the top scoring 4 lines
 
-    
-    if(lines.size()==0){
-        //println("ERROR: Did not detect any laser line, did you select a SerialPort form the menu?");
-        PVector p = new PVector(0,0,0);
-        return(p);
+
+    if (lines.size()==0) {
+      //println("ERROR: Did not detect any laser line, did you select a SerialPort form the menu?");
+      PVector p = new PVector(0, 0, 0);
+      return(p);
     }
-    
+
     PVector p1 = new PVector(lines.elementAt(0).x1, lines.elementAt(0).y1);
-   
+
     PVector p = convertCvPointToFSPoint(p1);
     return p;
+  }
 
-}
 
+  public PImage detectEdges(PImage img)
+  {
+    CannyEdgeDetector detector = new CannyEdgeDetector();
 
-public PImage detectEdges(PImage img)
-{
-  CannyEdgeDetector detector = new CannyEdgeDetector();
+    detector.setLowThreshold(0.5f);
+    detector.setHighThreshold(1f);
 
-  detector.setLowThreshold(0.5f);
-  detector.setHighThreshold(1f);
+    detector.setSourceImage((java.awt.image.BufferedImage)img.getImage());
 
-   detector.setSourceImage((java.awt.image.BufferedImage)img.getImage());
-   
-   detector.process();
-   BufferedImage edges = detector.getEdgesImage();
-   PImage changed = new PImage(edges);
-   return changed;
-}
+    detector.process();
+    BufferedImage edges = detector.getEdgesImage();
+    PImage changed = new PImage(edges);
+    return changed;
+  }
 
   private PImage subLaser(PImage laserOffImage, PImage laserOnImage)
   {
-    if(laserOffImage == null || laserOnImage == null)
+    if (laserOffImage == null || laserOnImage == null)
     {
       return null;
     }
-    
+
     //setImageForMainWindow(laserOnImage);
-    
+
     PImage bwLaserOffImage = convertImageToGreyscale(laserOffImage);
     PImage bwLaserOnImage = convertImageToGreyscale(laserOnImage);
 
 
     PImage result = (PImage) bwLaserOnImage.get();
-    
+
     result.blend(bwLaserOffImage, 0, 0, bwLaserOffImage.width, bwLaserOffImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
-       
-    result.filter(BLUR,8);//???
-    
+
+    result.filter(BLUR, 8);//???
+
     result.filter(THRESHOLD, FSConfiguration.IMAGE_FILTER_THRESHOLD);//apply threshold
 
     result.filter(ERODE);
@@ -93,56 +94,56 @@ public PImage detectEdges(PImage img)
     PImage laserImage = createImage(result.width, result.height, RGB);
     result.loadPixels();
     laserImage.loadPixels();
-    
+
     //initialize all pixels in laserImage to black
-    for(int px=0; px<laserImage.width*laserImage.height; px++)
+    for (int px=0; px<laserImage.width*laserImage.height; px++)
     {
       laserImage.pixels[px] = color(0);
     }
-    
+
     int[] edges = new int[result.width]; //contains the cols index of the detected edges per row
-    for(int y = 0; y <result.height; y++){
-        //reset the detected edges
-        for(int j=0; j<result.width; j++){ edges[j]=-1; }
-        
-        int j=0;
-        for(int x = 0; x<result.width; x++){
-            if(result.pixels[y*result.width+x]>color(250)){
-                edges[j]=x;
-                j++;
-            }
+    for (int y = 0; y <result.height; y++) {
+      //reset the detected edges
+      for (int j=0; j<result.width; j++) { 
+        edges[j]=-1;
+      }
+
+      int j=0;
+      for (int x = 0; x<result.width; x++) {
+        if (result.pixels[y*result.width+x]>color(250)) {
+          edges[j]=x;
+          j++;
         }
-        
-        //iterate over detected edges, find edges with biggest distance per row
-        int max_distance_index = -1;
-        int max_distance = -1;
-        for(int k=0; k<result.width-1; k+=2)
+      }
+
+      //iterate over detected edges, find edges with biggest distance per row
+      int max_distance_index = -1;
+      int max_distance = -1;
+      for (int k=0; k<result.width-1; k+=2)
+      {
+        if (edges[k]>=0 && edges[k+1]>=0 && (edges[k+1]-edges[k]<FSConfiguration.MAX_EDGE_DISTANCE) && (edges[k+1]-edges[k]>FSConfiguration.MIN_EDGE_DISTANCE) )
         {
-            if(edges[k]>=0 && edges[k+1]>=0 && (edges[k+1]-edges[k]<FSConfiguration.MAX_EDGE_DISTANCE) && (edges[k+1]-edges[k]>FSConfiguration.MIN_EDGE_DISTANCE) )
-            {
-                if(edges[k+1]-edges[k] > max_distance)
-                {
-                  max_distance = edges[k+1]-edges[k];
-                  max_distance_index = k; 
-                }
-            }
+          if (edges[k+1]-edges[k] > max_distance)
+          {
+            max_distance = edges[k+1]-edges[k];
+            max_distance_index = k;
+          }
         }
-        
-        //take middle of two edges with biggest distance
-        if(max_distance_index > -1)
-        {
-          int middle = (int)(edges[max_distance_index]+edges[max_distance_index+1])/2;
-          laserImage.pixels[y*result.width+middle] = color(255);
-        }
-        
-        
+      }
+
+      //take middle of two edges with biggest distance
+      if (max_distance_index > -1)
+      {
+        int middle = (int)(edges[max_distance_index]+edges[max_distance_index+1])/2;
+        laserImage.pixels[y*result.width+middle] = color(255);
+      }
     }
-    
+
     result.updatePixels();
     laserImage.updatePixels();
-    
+
     //setImageForMainWindow(laserImage);
-    
+
     return laserImage;
   }
 
@@ -153,11 +154,11 @@ public PImage detectEdges(PImage img)
   {
     PImage result;
 
-    if(img == null)
+    if (img == null)
     {
       return null;
     }
-    
+
     result = img.get();
     result.filter(GRAY);
     return result;
@@ -187,16 +188,43 @@ public PImage detectEdges(PImage img)
     //here we define the origin of the cvImage, we place it in the middle of the frame and in the corner of the two perpendiculair planes
     PVector origin = new PVector(cvImageSize.x/2.0f, cvImageSize.y*FSConfiguration.ORIGIN_Y);
 
-
     //translate
     cvPoint.x -= origin.x;
     cvPoint.y -= origin.y;
 
     //scale
-    PVector fsPoint = new PVector(cvPoint.x*fsImageSize.x/cvImageSize.x, -cvPoint.y*fsImageSize.y/cvImageSize.y,0);
-
+    PVector fsPoint = new PVector(cvPoint.x*fsImageSize.x/cvImageSize.x, -cvPoint.y*fsImageSize.y/cvImageSize.y, 0);
 
     return fsPoint;
+  }
+
+  //draw calibration lines on the screen...
+  public PImage drawHelperLinesToFrame(PImage frame)
+  {
+    PGraphics pg = createGraphics(frame.width, frame.height, P2D);
+    pg.beginDraw();
+    pg.image(frame, 0, 0);
+
+    //artificial horizon
+    pg.stroke(0, 0, 255); 
+    pg.line(0, frame.height*FSConfiguration.ORIGIN_Y, frame.width, frame.height*FSConfiguration.ORIGIN_Y);
+
+    //two lines for center of frame
+    pg.stroke(255, 255, 0); 
+    pg.line(frame.width*0.5f, 0, frame.width*0.5f, frame.width);
+    //  pg.stroke(255,255,0); pg.line(0,frame.height*0.5f, frame.width, frame.height*0.5f);
+
+    //line showing the lower limit where analyzing stops
+    pg.stroke(255, 0, 0); 
+    pg.line(0, frame.height-FSConfiguration.LOWER_ANALYZING_FRAME_LIMIT, frame.width, frame.height-FSConfiguration.LOWER_ANALYZING_FRAME_LIMIT);
+
+    //line showing the upper limit where analyzing starts
+    pg.stroke(255, 255, 0); 
+    pg.line(0, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT, frame.width, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT); 
+
+    pg.endDraw();
+
+    return pg.get();
   }
 
 
@@ -206,33 +234,35 @@ public PImage detectEdges(PImage img)
   public boolean putPointsFromFrameToCloud(PImage laserOffImage, PImage laserOnImage, int dpiVertical, float lowerLimit, FSController controller)
   {
     returnImage = null;
-    
-    if(laserOffImage == null || laserOnImage == null)
+
+    if (laserOffImage == null || laserOnImage == null)
     {
       return false;
     }
-    
+
     PImage laserLineImage = subLaser(laserOffImage, laserOnImage);
-    
+
     //setImageForMainWindow(laserLineImage);
-    
-    if(laserLineImage==null)
+
+    if (laserLineImage==null)
     {
       println("ERROR: laserLineImage==null");
-      
+
       return false;
     }
 
 
     //create a nice preview image for the main window... it shows the camera picture without the laser and on top of that, the detected laser line (edges)
-    PImage previewImage = laserOffImage.get();
+    PImage previewImage;
+    //previewImage = laserOffImage.get();
+    previewImage = drawHelperLinesToFrame(laserOffImage.get());
     previewImage.blend(laserLineImage, 0, 0, previewImage.width, previewImage.height, 0, 0, previewImage.width, previewImage.height, LIGHTEST); 
     setImageForMainWindow(previewImage);
 
 
     //convert from rgb to b&w
     PImage bwImage = convertImageToGreyscale(laserLineImage);
-    
+
 
     //position of the laser line on the back plane in frame/image coordinates
     PVector fsLaserLinePosition =  controller.laser.getLaserPointPosition();
@@ -240,7 +270,7 @@ public PImage detectEdges(PImage img)
     PVector cvLaserLinePosition = convertFSPointToCvPoint(fsLaserLinePosition);
     //println("cvLaserLinePosition: "+cvLaserLinePosition.toString());
     float laserPos = cvLaserLinePosition.x;//const over all y
-    
+
 
     bwImage.loadPixels();
 
@@ -248,7 +278,7 @@ public PImage detectEdges(PImage img)
     {
       for (int x = bwImage.width-1;x >= laserPos+FSConfiguration.ANALYZING_LASER_OFFSET;x--)
       {
-        if(bwImage.pixels[y*bwImage.width+x]==color(255))//check if white=laser-reflection
+        if (bwImage.pixels[y*bwImage.width+x]==color(255))//check if white=laser-reflection
         { 
           //we have a white point in the grayscale image, so one edge laser line found
           //now we should continue to look for the other edge and then take the middle of those two points
@@ -263,12 +293,12 @@ public PImage detectEdges(PImage img)
 
           FSLine l1 = new FSLine(controller.webcam.getPosition(), fsNewPoint);
           FSLine l2 = new FSLine(controller.laser.getPosition(), controller.laser.getLaserPointPosition());
-          
-          
+
+
           PVector i = l1.computeIntersectionWithLine(l2);
           fsNewPoint.x = i.x;
           fsNewPoint.z = i.z;
-          
+
           //At this point we know the depth=z. Now we need to consider the scaling depending on the depth.
           //First we move our point to a camera centered cartesion system.
           fsNewPoint.y -= (controller.webcam.getPosition()).y;
@@ -283,7 +313,7 @@ public PImage detectEdges(PImage img)
           float alphaOld = (float)atan(fsNewPoint.z/fsNewPoint.x);
           float alphaNew = alphaOld+alphaDelta.y*(PI/180.0f);
           float hypotenuse = (float)sqrt(fsNewPoint.x*fsNewPoint.x + fsNewPoint.z*fsNewPoint.z);
-          
+
 
           if (fsNewPoint.z < 0 && fsNewPoint.x < 0) {
             alphaNew += PI;
@@ -293,10 +323,10 @@ public PImage detectEdges(PImage img)
           }
           fsNewPoint.z = (float)sin(alphaNew)*hypotenuse;
           fsNewPoint.x = (float)cos(alphaNew)*hypotenuse;
-          
-          
+
+
           if (fsNewPoint.y>lowerLimit+0.5 && hypotenuse < 7) { //eliminate points from the grounds, that are not part of the model
-            
+
             controller.model.addPointToPointCloud(fsNewPoint);
             //println("added point to pointcloud: "+fsNewPoint.toString());
           }

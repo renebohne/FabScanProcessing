@@ -14,12 +14,12 @@ public class FSModel
     {
         println("ERROR: can't create file pointcloud.asc");
     }
-    
   }
   
   public void addPointToPointCloud(PVector fsNewPoint)
   {
     pointcloud.add(fsNewPoint);
+    println("added Point: "+fsNewPoint.x+" "+fsNewPoint.y+" "+fsNewPoint.z);
     output.println(fsNewPoint.x+" "+fsNewPoint.y+" "+fsNewPoint.z);
   }
   

@@ -1,23 +1,31 @@
 FSController controller;
 
+boolean initialized = false;
 
 void setup()
 {
-  size((int) FSConfiguration.CAM_IMAGE_WIDTH , (int) FSConfiguration.CAM_IMAGE_HEIGHT);
+  size((int) FSConfiguration.CAM_IMAGE_WIDTH , (int) FSConfiguration.CAM_IMAGE_HEIGHT, P3D);
   //size(800,600, P3D);
   //opencv = new OpenCV(this);
   controller = new FSController(this);
-  controller.init();
+  
+  initialized = controller.init();
   
   fill(255);
   stroke(255);
-  textSize(32);
+  textSize(28);
    
 }
 
 void draw()
 {
   background(0);
+  
+  if(!initialized)
+  {
+    text("FabScan not ready! Please start the application again!",100,100);
+    return;
+  }
   
   if(!controller.scanning)
   {
@@ -31,7 +39,7 @@ void draw()
     image(img,0,0);
   }
   //show progress 
-  text("Scanning... progress: "+ nf(controller.current_degree*100.0f/360.0f,1,2)+ " %",600,80);
+  text("Scanning... progress: "+ nf(controller.current_degree*100.0f/360.0f,1,2)+ " %",700,80);
   arc(width-100, 70, 100, 100, 0, radians(controller.current_degree), PIE);
   
 }
