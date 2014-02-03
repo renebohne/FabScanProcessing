@@ -1,11 +1,11 @@
 public class FSModel
 {
-  ArrayList<PVector> pointcloud;
+  //ArrayList<PVector> pointcloud;//we might want to get the point cloud for visualisation... but right now, it takes up too much memory
   private PrintWriter output;  
   
   public FSModel()
   {
-    pointcloud = new ArrayList<PVector>();
+    //pointcloud = new ArrayList<PVector>();//we might want to get the point cloud for visualisation... but right now, it takes up too much memory
     try
     {
       output = createWriter("pointcloud.asc");
@@ -18,14 +18,16 @@ public class FSModel
   
   public void addPointToPointCloud(PVector fsNewPoint)
   {
-    pointcloud.add(fsNewPoint);
+    //pointcloud.add(fsNewPoint);//we might want to get the point cloud for visualisation... but right now, it takes up too much memory
     println("added Point: "+fsNewPoint.x+" "+fsNewPoint.y+" "+fsNewPoint.z);
     output.println(fsNewPoint.x+" "+fsNewPoint.y+" "+fsNewPoint.z);
   }
   
+  //we might want to get the point cloud for visualisation... but right now, it takes up too much memory
   public ArrayList<PVector> getPointCloud()
   {
-    return pointcloud;
+    //return pointcloud;
+    throw new UnsupportedOperationException();
   }
   
   public void savePointCloudToFile()

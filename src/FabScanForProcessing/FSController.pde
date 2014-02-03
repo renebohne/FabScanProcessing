@@ -59,6 +59,8 @@ public class FSController
     if (p.x == 0.0) {
       return false;
     }
+    println("laser point position: "+p.toString());
+    println("laser point position: "+vision.convertFSPointToCvPoint(p).toString());
     laser.setLaserPointPosition(p);
     return true;
   }

@@ -81,7 +81,11 @@ public class FSWebcam
     if (cam.available())
     {
       cam.read();
+      
+      
+      
       cam.loadPixels();
+
       PImage result = createImage(cam.width, cam.height, RGB);
       result.loadPixels();
       int numPixels = cam.width*cam.height;
@@ -93,6 +97,10 @@ public class FSWebcam
       cam.updatePixels();
       result.updatePixels();
       return result;
+      
+      
+      //return cam.get();      
+      
     }
     return null;
   }

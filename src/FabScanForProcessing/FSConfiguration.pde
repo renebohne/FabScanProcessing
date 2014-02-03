@@ -5,6 +5,8 @@ public static class FSConfiguration
 
   public static String CAM_PORT_NAME = "USB Camera";
 
+  public static boolean SHOW_CALIBRATIONLINES = true;
+
   //threshold between black and white... allowed values: 0.00f-1.00f  
   public static float IMAGE_FILTER_THRESHOLD = 0.1f;
 
@@ -20,6 +22,9 @@ public static class FSConfiguration
   //units are pixels, seen from the top, resp from the bottom  
   public static int UPPER_ANALYZING_FRAME_LIMIT = 0;
   public static int LOWER_ANALYZING_FRAME_LIMIT = 30;
+  
+  //we don't look at pixels lower than this position when we try to detect the laser
+  public static int LOWEST_Y_POSITION_FOR_LASER_DETECTION = 150;
 
   //as the actual position in the frame differs a little from calculated laserline we stop a little befor as we might catch the real non reflected laser line which creates noise
   public static int ANALYZING_LASER_OFFSET = 90;
