@@ -115,7 +115,8 @@ public class FSController
       }
 
       //here the magic happens
-      if(vision.putPointsFromFrameToCloud(laserOffImage, laserOnImage, yDpi, 0, this) == true)
+       
+      if(vision.putPointsFromFrameToCloud(laserOffImage, laserOnImage, yDpi, 0, this) ==true)
       {
         turntable.turnNumberOfDegrees(stepDegrees);
         delay(  300+(int)stepDegrees*100);//NOT PERFECT !!!
@@ -123,7 +124,7 @@ public class FSController
 
         current_degree += stepDegrees;
       
-        return laserOnImage;
+        return vision.getImageForMainWindow();//this is the image that we see in the preview (MainWindow)
       }
       
       return null;//vision.putPointsFromFrameToCloud failed

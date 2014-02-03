@@ -6,8 +6,23 @@ import java.awt.Color;
 
 public class FSVision
 {
+  
+  private PImage returnImage = null;//you can put the image that this method should return in this variable. This image will be displayed after each step...
+  
   public FSVision()
   {
+  }
+  
+  //this image should be displayed in the MainWindow... for a preview and progress indicatin
+  public PImage getImageForMainWindow()
+  {
+    return returnImage;
+  }
+  
+   //this image should be displayed in the MainWindow... for a preview and progress indicatin
+  public void setImageForMainWindow(PImage img)
+  {
+    returnImage = img.get();
   }
 
 public PVector detectLaserLine(PImage laserOff, PImage laserOn, int threshold )
@@ -50,77 +65,31 @@ public PImage detectEdges(PImage img)
    return changed;
 }
 
-  //from Processing Webpage... but this is not working too well
-  public PImage old_detectEdges(PImage img)
-  {
-    float[][] kernel = {
-      { 
-        -1, -1, -1
-      }
-      , 
-      { 
-        -1, 9, -1
-      }
-      , 
-      { 
-        -1, -1, -1
-      }
-    };
-
-    PImage result = createImage(img.width, img.height, RGB);
-
-    // Loop through every pixel in the image.
-    for (int y = 1; y < img.height-1; y++) { // Skip top and bottom edges
-      for (int x = 1; x < img.width-1; x++) { // Skip left and right edges
-        float sum = 0; // Kernel sum for this pixel
-        for (int ky = -1; ky <= 1; ky++) {
-          for (int kx = -1; kx <= 1; kx++) {
-            // Calculate the adjacent pixel for this kernel point
-            int pos = (y + ky)*img.width + (x + kx);
-            // Image is grayscale, red/green/blue are identical
-            float val = red(img.pixels[pos]);
-            // Multiply adjacent pixels based on the kernel values
-            sum += kernel[ky+1][kx+1] * val;
-          }
-        }
-        // For this pixel in the new image, set the gray value
-        // based on the sum from the kernel
-        result.pixels[y*img.width + x] = color(sum, sum, sum);
-      }
-    }
-    result.updatePixels();
-    return result;
-  }
-
-
   private PImage subLaser(PImage laserOffImage, PImage laserOnImage)
   {
     if(laserOffImage == null || laserOnImage == null)
     {
       return null;
     }
+    
+    //setImageForMainWindow(laserOnImage);
+    
     PImage bwLaserOffImage = convertImageToGreyscale(laserOffImage);
     PImage bwLaserOnImage = convertImageToGreyscale(laserOnImage);
+
 
     PImage result = (PImage) bwLaserOnImage.get();
     
     result.blend(bwLaserOffImage, 0, 0, bwLaserOffImage.width, bwLaserOffImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
+       
+    result.filter(BLUR,8);//???
     
-    //PImage tresh2Image = (PImage) result.get();
-    
-    PImage gaussImage = result.get();
-    gaussImage.filter(BLUR, 5); //gaussian filter - parameter: radius... 5 or 3??
-
-    //seems to work better if we DON'T subtract a second time...???
-    //result.blend(gaussImage, 0, 0, gaussImage.width, gaussImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
-    
-    //cv::threshold(diffImage,treshImage,threshold,255,cv::THRESH_BINARY); //apply threshold
-    result.filter(THRESHOLD, 0.1);//apply threshold
+    result.filter(THRESHOLD, FSConfiguration.IMAGE_FILTER_THRESHOLD);//apply threshold
 
     result.filter(ERODE);
 
     result = detectEdges(result);
-    
+
     PImage laserImage = createImage(result.width, result.height, RGB);
     result.loadPixels();
     laserImage.loadPixels();
@@ -144,20 +113,35 @@ public PImage detectEdges(PImage img)
             }
         }
         
-        //iterate over detected edges, take middle of two edges
+        //iterate over detected edges, find edges with biggest distance per row
+        int max_distance_index = -1;
+        int max_distance = -1;
         for(int k=0; k<result.width-1; k+=2)
         {
-            if(edges[k]>=0 && edges[k+1]>=0 && (edges[k+1]-edges[k]<40) )
+            if(edges[k]>=0 && edges[k+1]>=0 && (edges[k+1]-edges[k]<FSConfiguration.MAX_EDGE_DISTANCE) && (edges[k+1]-edges[k]>FSConfiguration.MIN_EDGE_DISTANCE) )
             {
-                int middle = (int)(edges[k]+edges[k+1])/2;
-                //qDebug() << cols << rows << y << middle;
-                laserImage.pixels[y*result.width+middle] = color(255);
+                if(edges[k+1]-edges[k] > max_distance)
+                {
+                  max_distance = edges[k+1]-edges[k];
+                  max_distance_index = k; 
+                }
             }
         }
+        
+        //take middle of two edges with biggest distance
+        if(max_distance_index > -1)
+        {
+          int middle = (int)(edges[max_distance_index]+edges[max_distance_index+1])/2;
+          laserImage.pixels[y*result.width+middle] = color(255);
+        }
+        
+        
     }
     
     result.updatePixels();
     laserImage.updatePixels();
+    
+    //setImageForMainWindow(laserImage);
     
     return laserImage;
   }
@@ -221,6 +205,7 @@ public PImage detectEdges(PImage img)
   //dpiVertical: step between vertical points, lowerLimit: remove points below this limit
   public boolean putPointsFromFrameToCloud(PImage laserOffImage, PImage laserOnImage, int dpiVertical, float lowerLimit, FSController controller)
   {
+    returnImage = null;
     
     if(laserOffImage == null || laserOnImage == null)
     {
@@ -228,14 +213,26 @@ public PImage detectEdges(PImage img)
     }
     
     PImage laserLineImage = subLaser(laserOffImage, laserOnImage);
+    
+    //setImageForMainWindow(laserLineImage);
+    
     if(laserLineImage==null)
     {
       println("ERROR: laserLineImage==null");
+      
       return false;
     }
 
+
+    //create a nice preview image for the main window... it shows the camera picture without the laser and on top of that, the detected laser line (edges)
+    PImage previewImage = laserOffImage.get();
+    previewImage.blend(laserLineImage, 0, 0, previewImage.width, previewImage.height, 0, 0, previewImage.width, previewImage.height, LIGHTEST); 
+    setImageForMainWindow(previewImage);
+
+
     //convert from rgb to b&w
     PImage bwImage = convertImageToGreyscale(laserLineImage);
+    
 
     //position of the laser line on the back plane in frame/image coordinates
     PVector fsLaserLinePosition =  controller.laser.getLaserPointPosition();

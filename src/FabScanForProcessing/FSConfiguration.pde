@@ -5,6 +5,16 @@ public static String SERIAL_PORT_NAME = "/dev/tty.usbmodem1421";
 
 public static String CAM_PORT_NAME = "USB Camera";
   
+//threshold between black and white... allowed values: 0.00f-1.00f  
+public static float IMAGE_FILTER_THRESHOLD = 0.1f;
+
+//minimum distance between two points of an edge
+public static int MIN_EDGE_DISTANCE = 0;//pixels
+
+//maximum distance between two points of an edge
+public static int MAX_EDGE_DISTANCE = 60;//pixels
+
+  
 //to make the scanning process faster we ommit the lower and hight part of the cvImage
 //as there is no object anyway.  The lower limit is defined by the turning table lower bound
 //units are pixels, seen from the top, resp from the bottom  

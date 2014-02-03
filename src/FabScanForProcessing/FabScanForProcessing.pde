@@ -3,8 +3,8 @@ FSController controller;
 
 void setup()
 {
-  //size((int) FSConfiguration.CAM_IMAGE_WIDTH , (int) FSConfiguration.CAM_IMAGE_HEIGHT, P3D);
-  size(800,600, P3D);
+  size((int) FSConfiguration.CAM_IMAGE_WIDTH , (int) FSConfiguration.CAM_IMAGE_HEIGHT);
+  //size(800,600, P3D);
   //opencv = new OpenCV(this);
   controller = new FSController(this);
   controller.init();
@@ -26,10 +26,13 @@ void draw()
   }
   
   PImage img = controller.tick();
-  
+  if(img != null)
+  {
+    image(img,0,0);
+  }
   //show progress 
-  text("Scanning... progress: "+controller.current_degree*100.0f/360.0f+" %",100,100);
-  arc(width/2, height/2, 300, 300, 0, radians(controller.current_degree), PIE);
+  text("Scanning... progress: "+ nf(controller.current_degree*100.0f/360.0f,1,2)+ " %",600,80);
+  arc(width-100, 70, 100, 100, 0, radians(controller.current_degree), PIE);
   
 }
 
