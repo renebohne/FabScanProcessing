@@ -32,6 +32,8 @@ public class FSController
     vision = new FSVision();
     model = new FSModel();
     serial = new FSSerial(parent);
+    
+    //serial.writeInt(207);//TURN LIGHT ON
   }
 
   public boolean detectLaserLine()
@@ -73,6 +75,9 @@ public class FSController
       println("ERROR: webcam is not available!");
       return false;
     }
+    
+    delay(3000);//wait for stable power supply
+    
 
     if (!detectLaserLine())
     {

@@ -35,7 +35,7 @@ public class FSWebcam
     }
     else
     {
-      cam = new Capture(parent, (int) FSConfiguration.CAM_IMAGE_WIDTH, (int) FSConfiguration.CAM_IMAGE_HEIGHT, FSConfiguration.CAM_PORT_NAME , 30);
+      cam = new Capture(parent, (int) FSConfiguration.CAM_IMAGE_WIDTH, (int) FSConfiguration.CAM_IMAGE_HEIGHT, FSConfiguration.CAM_PORT_NAME, 30);
 
       if (cam != null)
       {
@@ -64,9 +64,9 @@ public class FSWebcam
 
   public PImage getFrame()
   {
-    if(DEBUG_MODE)
+    if (DEBUG_MODE)
     {
-      if(image_counter==0)
+      if (image_counter==0)
       {
         image_counter=1;
         return laserOffImage;
@@ -77,13 +77,13 @@ public class FSWebcam
         return laserOnImage;
       }
     }
-    
+
     if (cam.available())
     {
       cam.read();
-      
-      
-      
+
+
+
       cam.loadPixels();
 
       PImage result = createImage(cam.width, cam.height, RGB);
@@ -91,16 +91,28 @@ public class FSWebcam
       int numPixels = cam.width*cam.height;
       for (int i=0; i<numPixels;i++)
       {
-        result.pixels[i] = cam.pixels[i];
+
+        if (FSConfiguration.APPLY_RED_FILTER)//remove green and blue channels... only show the red channel (because the laser is red)
+        {
+          result.pixels[i] = cam.pixels[i] & 0xFFFF0000;//ARGB
+        }
+        else if (FSConfiguration.APPLY_BLUE_FILTER)//less blue!
+        {
+          result.pixels[i] = cam.pixels[i] & 0xFFFFFF3F;//ARGB
+        }
+
+        else//1:1 camera picture
+        {
+          result.pixels[i] = cam.pixels[i];
+        }
       }
 
       cam.updatePixels();
       result.updatePixels();
       return result;
-      
-      
-      //return cam.get();      
-      
+
+
+      //return cam.get();
     }
     return null;
   }

@@ -26,22 +26,24 @@ public class FSVision
   }
 
 
-//TODO: THIS IS A DRAFT! I need to find a better method for this. At least, the HoughTransformation was removed :)
+  //TODO: THIS IS A DRAFT! I need to find a better method for this. At least, the HoughTransformation was removed :)
   public PVector detectLaserLine(PImage laserOff, PImage laserOn, int threshold )
   {
-    
+
     PImage laserLine = subLaser(laserOff, laserOn);//was subLaser2
-    
+
+    setImageForMainWindow(laserLine);
+
     //only consider the top ... pixels!! If we would parse the whole frame, we might detect the wrong x-position of the laser
     //laserLine.resize(laserOff.width, FSConfiguration.LOWEST_Y_POSITION_FOR_LASER_DETECTION);
-    laserLine = laserLine.get(0,0,laserLine.width, FSConfiguration.LOWEST_Y_POSITION_FOR_LASER_DETECTION);
+    //älaserLine = laserLine.get(0, 0, laserLine.width, FSConfiguration.MAX_Y_POSITION_FOR_LASER_DETECTION);
 
     float middle_x = -1.0f;
     float middle_y = -1.0f;
-    
-    for (int y = 0; y <laserLine.height; y++) 
+
+    for (int y = FSConfiguration.MIN_Y_POSITION_FOR_LASER_DETECTION; y <FSConfiguration.MAX_Y_POSITION_FOR_LASER_DETECTION; y++) 
     {
-      for (int x = 0; x<laserLine.width; x++) 
+      for (int x = FSConfiguration.MIN_X_POSITION_FOR_LASER_DETECTION; x<FSConfiguration.MAX_X_POSITION_FOR_LASER_DETECTION; x++) 
       {
         if (laserLine.pixels[y*laserLine.width+x] == color(255)) 
         {
@@ -51,20 +53,18 @@ public class FSVision
         }
       }
     }
-    
-    if( (middle_x == -1.0f) && (middle_y == -1.0f))
+
+    if ( (middle_x == -1.0f) && (middle_y == -1.0f))
     {
       println("ERROR: Did not detect any laser line, did you select a SerialPort form the menu?");
       PVector p = new PVector(0, 0, 0);
       return p;
     }
-     
+
     PVector p1 = new PVector(middle_x, middle_y);
 
     PVector p = convertCvPointToFSPoint(p1);
     return p;
-    
-    
   }
 
 
@@ -90,21 +90,21 @@ public class FSVision
       return null;
     }
 
-    //setImageForMainWindow(laserOnImage);
+
 
 
 
     //PImage result = (PImage) laserOnImage.get();
     PImage result = laserOnImage;
-    
+
     laserOffImage.filter(GRAY);
     laserOnImage.filter(GRAY);
-    
+
 
 
     result.blend(laserOffImage, 0, 0, laserOffImage.width, laserOffImage.height, 0, 0, result.width, result.height, SUBTRACT);//subtract both grayscales
 
-    result.filter(BLUR, 8);//???
+    result.filter(BLUR, 5);//???
 
     result.filter(THRESHOLD, FSConfiguration.IMAGE_FILTER_THRESHOLD);//apply threshold
 
@@ -206,7 +206,7 @@ public class FSVision
   }
 
 
-//TODO: only draw this once and make it a static overlay to save ressources!!!
+  //TODO: only draw this once and make it a static overlay to save ressources!!!
   //draw calibration lines on the screen...
   public PImage drawHelperLinesToFrame(PImage frame)
   {
@@ -230,13 +230,13 @@ public class FSVision
     //line showing the upper limit where analyzing starts
     pg.stroke(255, 255, 0); 
     pg.line(0, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT, frame.width, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT);
-   
+
     //laser
     pg.stroke(255, 0, 0); 
     float thex = convertFSPointToCvPoint(controller.laser.getLaserPointPosition()).x;
-    
+
     pg.line(thex, 0, thex, frame.height);
-   
+
 
     pg.endDraw();
 
@@ -256,6 +256,20 @@ public class FSVision
       return false;
     }
 
+    //create a nice preview image for the main window... it shows the camera picture without the laser and on top of that, the detected laser line (edges)
+    PImage previewImage;
+
+
+    if (FSConfiguration.SHOW_CALIBRATIONLINES)
+    {
+      previewImage = drawHelperLinesToFrame(laserOffImage.get());
+    }
+    else
+    {
+      previewImage = laserOffImage.get();
+    }
+
+
     PImage laserLineImage = subLaser(laserOffImage, laserOnImage);
 
     //setImageForMainWindow(laserLineImage);
@@ -268,29 +282,18 @@ public class FSVision
     }
 
 
-    //create a nice preview image for the main window... it shows the camera picture without the laser and on top of that, the detected laser line (edges)
-    PImage previewImage;
-    
-    
-    if(FSConfiguration.SHOW_CALIBRATIONLINES)
-    {
-      previewImage = drawHelperLinesToFrame(laserOffImage.get());
-    }
-    else
-    {
-      previewImage = laserOffImage.get();
-    }
-    
     previewImage.blend(laserLineImage, 0, 0, previewImage.width, previewImage.height, 0, 0, previewImage.width, previewImage.height, LIGHTEST); 
     setImageForMainWindow(previewImage);
 
 
+
+
     //convert from rgb to b&w
     laserLineImage.filter(GRAY);
-    
 
-//THE LASER POSITION IS ONLY DETECTED ONCE AT THE START!
-//THIS IS OK IF THE LASER IS NOT MOVED (NO STEPPER MOTOR FOR THE LASER)
+
+    //THE LASER POSITION IS ONLY DETECTED ONCE AT THE START!
+    //THIS IS OK IF THE LASER IS NOT MOVED (NO STEPPER MOTOR FOR THE LASER)
 
     //position of the laser line on the back plane in frame/image coordinates
     PVector fsLaserLinePosition =  controller.laser.getLaserPointPosition();
@@ -360,7 +363,7 @@ public class FSVision
         }
       }
     }
-        
+
     laserLineImage.updatePixels();
 
     return true;
