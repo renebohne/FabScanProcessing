@@ -1,7 +1,7 @@
 public static class FSConfiguration
 {
 
-  public static String SERIAL_PORT_NAME = "/dev/tty.usbmodem1421";
+  public static String SERIAL_PORT_NAME = "/dev/tty.usbmodem1411";
 
   public static String CAM_PORT_NAME = "USB Camera";
 
@@ -12,29 +12,28 @@ public static class FSConfiguration
   
   //filter out green and blue channels
   public static boolean APPLY_RED_FILTER = true;
-  
 
   //threshold between black and white... allowed values: 0.00f-1.00f  
-  public static float IMAGE_FILTER_THRESHOLD = 0.1f;
+  public static float IMAGE_FILTER_THRESHOLD = 0.1f;//default: 0.1f
 
   //minimum distance between two points of an edge (aka minimum width of the laser line)
-  public static int MIN_EDGE_DISTANCE = 1;//pixels
+  public static int MIN_EDGE_DISTANCE = 0;//pixels - good values are between 0 and 2
 
   //maximum distance between two points of an edge (aka maximum width of the laser line)
   public static int MAX_EDGE_DISTANCE = 60;//pixels
 
-
+  //we expect the laser to be within this frame
+  public static int MIN_X_POSITION_FOR_LASER_DETECTION = 300;
+  public static int MAX_X_POSITION_FOR_LASER_DETECTION = 1280/2;
+  public static int MIN_Y_POSITION_FOR_LASER_DETECTION = 0;
+  public static int MAX_Y_POSITION_FOR_LASER_DETECTION = 50;
+  
   //to make the scanning process faster we ommit the lower and hight part of the cvImage
   //as there is no object anyway.  The lower limit is defined by the turning table lower bound
   //units are pixels, seen from the top, resp from the bottom  
   public static int UPPER_ANALYZING_FRAME_LIMIT = 0;
   public static int LOWER_ANALYZING_FRAME_LIMIT = 30;
   
-  //we expect the laser to be within this frame
-  public static int MIN_X_POSITION_FOR_LASER_DETECTION = 300;
-  public static int MAX_X_POSITION_FOR_LASER_DETECTION = 1280/2;
-  public static int MIN_Y_POSITION_FOR_LASER_DETECTION = 0;
-  public static int MAX_Y_POSITION_FOR_LASER_DETECTION = 50;
 
   //as the actual position in the frame differs a little from calculated laserline we stop a little befor as we might catch the real non reflected laser line which creates noise
   public static int ANALYZING_LASER_OFFSET = 90;

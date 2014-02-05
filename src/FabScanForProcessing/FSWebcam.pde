@@ -35,11 +35,18 @@ public class FSWebcam
     }
     else
     {
+      try
+      {
       cam = new Capture(parent, (int) FSConfiguration.CAM_IMAGE_WIDTH, (int) FSConfiguration.CAM_IMAGE_HEIGHT, FSConfiguration.CAM_PORT_NAME, 30);
 
       if (cam != null)
       {
         cam.start();
+      }
+      }
+      catch(Exception ex)
+      {
+        cam = null;
       }
     }
   }

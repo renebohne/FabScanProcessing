@@ -56,7 +56,6 @@ public class FSVision
 
     if ( (middle_x == -1.0f) && (middle_y == -1.0f))
     {
-      println("ERROR: Did not detect any laser line, did you select a SerialPort form the menu?");
       PVector p = new PVector(0, 0, 0);
       return p;
     }
@@ -206,41 +205,46 @@ public class FSVision
   }
 
 
-  //TODO: only draw this once and make it a static overlay to save ressources!!!
   //draw calibration lines on the screen...
+  private PImage helperPic = null;
   public PImage drawHelperLinesToFrame(PImage frame)
   {
-    PGraphics pg = createGraphics(frame.width, frame.height, P2D);
-    pg.beginDraw();
-    pg.image(frame, 0, 0);
+    if (helperPic==null)
+    {
+      PGraphics pg = createGraphics(frame.width, frame.height, P2D);
+      pg.beginDraw();
+      pg.background(0);
+      //pg.image(frame, 0, 0);
 
-    //artificial horizon
-    pg.stroke(0, 0, 255); 
-    pg.line(0, frame.height*FSConfiguration.ORIGIN_Y, frame.width, frame.height*FSConfiguration.ORIGIN_Y);
+      //artificial horizon
+      pg.stroke(0, 0, 255); 
+      pg.line(0, frame.height*FSConfiguration.ORIGIN_Y, frame.width, frame.height*FSConfiguration.ORIGIN_Y);
 
-    //two lines for center of frame
-    pg.stroke(255, 255, 0); 
-    pg.line(frame.width*0.5f, 0, frame.width*0.5f, frame.width);
-    //  pg.stroke(255,255,0); pg.line(0,frame.height*0.5f, frame.width, frame.height*0.5f);
+      //two lines for center of frame
+      pg.stroke(255, 255, 0); 
+      pg.line(frame.width*0.5f, 0, frame.width*0.5f, frame.width);
+      //  pg.stroke(255,255,0); pg.line(0,frame.height*0.5f, frame.width, frame.height*0.5f);
 
-    //line showing the lower limit where analyzing stops
-    pg.stroke(255, 0, 0); 
-    pg.line(0, frame.height-FSConfiguration.LOWER_ANALYZING_FRAME_LIMIT, frame.width, frame.height-FSConfiguration.LOWER_ANALYZING_FRAME_LIMIT);
+      //line showing the lower limit where analyzing stops
+      pg.stroke(255, 0, 0); 
+      pg.line(0, frame.height-FSConfiguration.LOWER_ANALYZING_FRAME_LIMIT, frame.width, frame.height-FSConfiguration.LOWER_ANALYZING_FRAME_LIMIT);
 
-    //line showing the upper limit where analyzing starts
-    pg.stroke(255, 255, 0); 
-    pg.line(0, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT, frame.width, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT);
+      //line showing the upper limit where analyzing starts
+      pg.stroke(255, 255, 0); 
+      pg.line(0, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT, frame.width, FSConfiguration.UPPER_ANALYZING_FRAME_LIMIT);
 
-    //laser
-    pg.stroke(255, 0, 0); 
-    float thex = convertFSPointToCvPoint(controller.laser.getLaserPointPosition()).x;
+      //laser
+      pg.stroke(255, 0, 0); 
+      
+      float thex = convertFSPointToCvPoint(controller.laser.getLaserPointPosition()).x;
+      pg.line(thex, 0, thex, frame.height);
+      pg.endDraw();
 
-    pg.line(thex, 0, thex, frame.height);
-
-
-    pg.endDraw();
-
-    return pg.get();
+      helperPic = pg.get();
+    }
+    
+    frame.blend(helperPic, 0, 0, frame.width, frame.height, 0, 0, frame.width, frame.height, LIGHTEST); 
+    return frame;
   }
 
 

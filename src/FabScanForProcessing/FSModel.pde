@@ -1,7 +1,9 @@
 public class FSModel
 {
   //ArrayList<PVector> pointcloud;//we might want to get the point cloud for visualisation... but right now, it takes up too much memory
-  private PrintWriter output;  
+  private PrintWriter output;
+
+  public long numberOfPoints = 0;   
   
   public FSModel()
   {
@@ -19,7 +21,8 @@ public class FSModel
   public void addPointToPointCloud(PVector fsNewPoint)
   {
     //pointcloud.add(fsNewPoint);//we might want to get the point cloud for visualisation... but right now, it takes up too much memory
-    println("added Point: "+fsNewPoint.x+" "+fsNewPoint.y+" "+fsNewPoint.z);
+    //println("added Point: "+fsNewPoint.x+" "+fsNewPoint.y+" "+fsNewPoint.z);
+    numberOfPoints++;
     output.println(fsNewPoint.x+" "+fsNewPoint.y+" "+fsNewPoint.z);
   }
   

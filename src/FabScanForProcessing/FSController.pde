@@ -27,11 +27,11 @@ public class FSController
   {
     parent = p;
     webcam = new FSWebcam(parent);
+    serial = new FSSerial(parent);
     laser = new FSLaser(this);
     turntable = new FSTurntable();
     vision = new FSVision();
     model = new FSModel();
-    serial = new FSSerial(parent);
     
     //serial.writeInt(207);//TURN LIGHT ON
   }
@@ -53,10 +53,7 @@ public class FSController
     {
       laserOnFrame = webcam.getFrame();
     }
-    //cv::resize( laserOnFrame,laserOnFrame,cv::Size(1280,960) );
-    //cv::resize( laserOffFrame,laserOffFrame,cv::Size(1280,960) );
-
-
+  
     PVector p = vision.detectLaserLine( laserOffFrame, laserOnFrame, threshold );
     if (p.x == 0.0) {
       return false;
@@ -67,12 +64,23 @@ public class FSController
     return true;
   }
 
+
   public boolean init()
   {
     //check if the webcam is available
     if (!webcam.isAvailable())
     {
       println("ERROR: webcam is not available!");
+      println("Available webcams: ");
+      println(Capture.list());
+      return false;
+    }
+    
+    if (!serial.serialPortInitialized())
+    {
+      println("ERROR: serial port is not available!");
+      println("Available serial ports:");
+      println(Serial.list());
       return false;
     }
     
@@ -128,7 +136,7 @@ public class FSController
       if (vision.putPointsFromFrameToCloud(laserOffImage, laserOnImage, yDpi, 0, this) ==true)
       {
         turntable.turnNumberOfDegrees(stepDegrees);
-        delay(  300+(int)stepDegrees*100);//NOT PERFECT !!!
+        delay(  1000+(int)stepDegrees*100);//NOT PERFECT !!!
 
 
         current_degree += stepDegrees;
