@@ -12,6 +12,8 @@ public class FSWebcam
   PImage laserOnImage;
   PImage laserOffImage;
 
+private PImage result_image;
+   
 
   public FSWebcam(PApplet p)
   {
@@ -27,6 +29,7 @@ public class FSWebcam
     //println("selected camera: "+cameras[0]);
     //cam = new Capture(parent, cameras[0]);
     //}
+    
 
     if (DEBUG_MODE)
     {
@@ -35,6 +38,7 @@ public class FSWebcam
     }
     else
     {
+      
       try
       {
       cam = new Capture(parent, (int) FSConfiguration.CAM_IMAGE_WIDTH, (int) FSConfiguration.CAM_IMAGE_HEIGHT, FSConfiguration.CAM_PORT_NAME, 30);
@@ -88,38 +92,40 @@ public class FSWebcam
     if (cam.available())
     {
       cam.read();
+      //cam.loadPixels();
+      
+      PImage cam_image;
 
+      cam_image = cam.get();
+      cam_image.loadPixels();
 
-
-      cam.loadPixels();
-
-      PImage result = createImage(cam.width, cam.height, RGB);
-      result.loadPixels();
-      int numPixels = cam.width*cam.height;
+      result_image = createImage((int) FSConfiguration.CAM_IMAGE_WIDTH, (int) FSConfiguration.CAM_IMAGE_HEIGHT, RGB);
+      result_image.loadPixels();
+      
+      int numPixels = cam_image.width*cam_image.height;
       for (int i=0; i<numPixels;i++)
       {
 
         if (FSConfiguration.APPLY_RED_FILTER)//remove green and blue channels... only show the red channel (because the laser is red)
         {
-          result.pixels[i] = cam.pixels[i] & 0xFFFF0000;//ARGB
+          result_image.pixels[i] = cam_image.pixels[i] & 0xFFFF0000;//ARGB
         }
         else if (FSConfiguration.APPLY_BLUE_FILTER)//less blue!
         {
-          result.pixels[i] = cam.pixels[i] & 0xFFFFFF3F;//ARGB
+          result_image.pixels[i] = cam_image.pixels[i] & 0xFFFFFF3F;//ARGB
         }
 
         else//1:1 camera picture
         {
-          result.pixels[i] = cam.pixels[i];
+          result_image.pixels[i] = cam_image.pixels[i];
         }
       }
 
-      cam.updatePixels();
-      result.updatePixels();
-      return result;
+      result_image.updatePixels();
+      //cam_image.updatePixels();
+      
+      return result_image;
 
-
-      //return cam.get();
     }
     return null;
   }

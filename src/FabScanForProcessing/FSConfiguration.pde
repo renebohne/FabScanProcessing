@@ -1,11 +1,15 @@
 public static class FSConfiguration
 {
 
-  public static String SERIAL_PORT_NAME = "/dev/tty.usbmodem1411";
+  public static String SERIAL_PORT_NAME = "/dev/tty.usbmodem1421";
 
   public static String CAM_PORT_NAME = "USB Camera";
 
   public static boolean SHOW_CALIBRATIONLINES = true;
+  
+  public static boolean EXPORT_DAT_FILE = false;//binary format for sunflow renderer
+  
+  public static boolean RESIZE_PREVIEW = false;//true resizes the preview image to 1024x768
   
   //filter out blue channel
   public static boolean APPLY_BLUE_FILTER = false;

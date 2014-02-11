@@ -67,13 +67,15 @@ public class FSController
 
   public boolean init()
   {
+    boolean ret = true;
+    
     //check if the webcam is available
     if (!webcam.isAvailable())
     {
       println("ERROR: webcam is not available!");
       println("Available webcams: ");
       println(Capture.list());
-      return false;
+      ret = false;
     }
     
     if (!serial.serialPortInitialized())
@@ -81,6 +83,11 @@ public class FSController
       println("ERROR: serial port is not available!");
       println("Available serial ports:");
       println(Serial.list());
+      ret = false;
+    }
+    
+    if(ret == false)
+    {
       return false;
     }
     
